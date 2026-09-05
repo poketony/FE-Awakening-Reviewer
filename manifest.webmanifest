@@ -1,6 +1,6 @@
 {
-  "name": "FE Awakening Reviewer",
-  "short_name": "FE 검수시벌",
+  "name": "FIRE EMBLEM 검수시발",
+  "short_name": "검수시발",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#111015",
