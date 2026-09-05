@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="theme-color" content="#16151a" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com https://raw.githubusercontent.com; img-src 'self' data: blob: https://raw.githubusercontent.com; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="stylesheet" href="./styles.css" />
+  <title>FE Awakening Reviewer</title>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">FE-Awakening · mobile review</p>
+      <h1>지원회화 검수</h1>
+    </div>
+    <span id="status" class="status">초기화 중…</span>
+  </header>
+
+  <section class="auth card">
+    <div class="auth-copy">
+      <strong>GitHub 연결</strong>
+      <span>토큰은 브라우저 메모리에만 두며 저장하지 않습니다.</span>
+    </div>
+    <div class="auth-row">
+      <input id="token" type="password" autocomplete="off" placeholder="Fine-grained PAT (선택)" aria-label="GitHub token" />
+      <button id="connect" class="primary">쓰기 연결</button>
+      <button id="read-only">읽기 전용</button>
+    </div>
+  </section>
+
+  <main class="layout">
+    <aside class="sidebar card">
+      <div class="tabs" role="tablist">
+        <button id="main-tab" class="tab active" role="tab">본편</button>
+        <button id="dlc-tab" class="tab" role="tab">DLC</button>
+      </div>
+      <input id="search" class="search" type="search" placeholder="캐릭터/파일 검색" />
+      <label class="toggle"><input id="include-variants" type="checkbox" /> 중복 성별/외형 변형도 표시</label>
+      <div id="file-list" class="file-list" aria-live="polite"></div>
+    </aside>
+
+    <section class="review-pane">
+      <div id="empty" class="empty card">
+        <strong>왼쪽에서 회화를 고르세요.</strong>
+        <p>일본어 원문과 현재 한국어를 비교하고, 수정한 내용은 기기에 초안으로 쌓입니다.</p>
+      </div>
+
+      <div id="workspace" hidden>
+        <section class="card workspace-head">
+          <div>
+            <p class="eyebrow">현재 파일</p>
+            <h2 id="file-title"></h2>
+            <code id="source-path"></code>
+          </div>
+          <div class="entry-nav">
+            <button id="prev-entry" aria-label="이전 MID">←</button>
+            <select id="entry-select" aria-label="MID 선택"></select>
+            <button id="next-entry" aria-label="다음 MID">→</button>
+          </div>
+        </section>
+
+        <section class="compare-grid">
+          <article class="card source-card">
+            <p class="eyebrow">일본어 원문</p>
+            <pre id="japanese-plain" class="plain-text"></pre>
+          </article>
+          <article class="card source-card">
+            <p class="eyebrow">현재 한국어</p>
+            <pre id="korean-plain" class="plain-text"></pre>
+          </article>
+        </section>
+
+        <section class="card editor-card">
+          <div class="editor-title">
+            <div><p class="eyebrow">수정</p><h2>대사 전용 안전 편집기</h2></div>
+            <div class="chips"><span id="control-state" class="chip"></span><span id="draft-state" class="chip"></span><span id="width-state" class="chip"></span></div>
+          </div>
+          <div class="editor-tabs" role="tablist" aria-label="편집 화면 선택">
+            <button id="safe-tab" class="editor-tab active" type="button" role="tab">대사만 편집</button>
+            <button id="raw-tab" class="editor-tab" type="button" role="tab">스크립트 확인</button>
+          </div>
+          <div id="safe-editor" class="safe-editor" aria-live="polite"></div>
+          <div id="raw-panel" hidden>
+            <textarea id="editor" class="raw-view" spellcheck="false" autocapitalize="off" autocomplete="off" readonly></textarea>
+            <p class="hint">원본 스크립트 확인용 읽기 전용 화면입니다. <code>$Ws</code>, <code>$Wm</code>, <code>$E</code>, <code>$k</code>, <code>\\n</code> 등의 제어코드는 안전 편집기에서 잠겨 있습니다.</p>
+          </div>
+          <p id="safe-hint" class="hint">실제 대사 문자만 수정할 수 있습니다. 게임 줄바꿈·화자·표정·음성·분기 코드는 자동으로 보존됩니다.</p>
+          <div class="action-row"><button id="revert" class="danger-ghost">이 파일 초안 버리기</button><button id="save" class="primary">로컬 초안 저장</button></div>
+        </section>
+
+        <section class="card renderer-card">
+          <div class="renderer-head">
+            <div><p class="eyebrow">인게임 확인</p><h2>실시간 미리보기</h2></div>
+            <div class="frame-nav"><button id="frame-prev">←</button><span id="frame-label">1 / 1</span><button id="frame-next">→</button></div>
+          </div>
+          <div class="canvas-wrap"><canvas id="canvas" width="400" height="240"></canvas></div>
+          <pre id="render-diagnostics" class="diagnostics">렌더러 준비 중…</pre>
+        </section>
+      </div>
+    </section>
+
+    <aside class="pending card">
+      <div class="pending-head"><div><p class="eyebrow">검수 세션</p><h2>수정 대기</h2></div><strong id="pending-count">0개 파일</strong></div>
+      <ul id="pending-list"></ul>
+      <div class="pending-actions"><button id="clear-drafts" class="danger-ghost">초안 전체 삭제</button><button id="publish" class="primary">커밋 + PR 만들기</button></div>
+      <div id="pr-result" class="pr-result"></div>
+    </aside>
+  </main>
+  <div id="toast" class="toast" role="status"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
