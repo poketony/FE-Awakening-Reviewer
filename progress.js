@@ -31,7 +31,16 @@ function persist() {
 }
 
 function cleanLabel(value) {
-  return String(value || "").replace(PREFIX_RE, "").replace(/^✓\s+/u, "").trim();
+  return String(value || "")
+    .replace(PREFIX_RE, "")
+    .replace(/^✓\s+/u, "")
+    .replace(/^●\s+/u, "")
+    .trim();
+}
+
+function formatPercent(value) {
+  const number = Number(value) || 0;
+  return Number.isInteger(number) ? `${number}%` : `${number.toFixed(1)}%`;
 }
 
 function currentEntryKey() {
@@ -115,15 +124,20 @@ function renderProgress() {
   const mode = currentMode();
   const result = modeProgress(progress, mode);
   if (els.progressMode) els.progressMode.textContent = mode === "dlc" ? "DLC" : "본편";
-  if (els.progressPercent) els.progressPercent.textContent = result.total ? `${result.percent}%` : "—";
+  if (els.progressPercent) els.progressPercent.textContent = result.total ? formatPercent(result.percent) : "—";
   if (els.progressCount) {
     els.progressCount.textContent = result.total
-      ? `완료 ${result.complete}/${result.total} · 진행 중 ${result.inProgress}`
+      ? `검수 완료 파일 ${result.complete} / ${result.total} · 진행 중 ${result.inProgress}`
       : "회화 목록 불러오는 중";
   }
   if (els.progressFill) els.progressFill.style.width = `${Math.max(0, Math.min(100, result.percent))}%`;
-  if (els.progressMessage) els.progressMessage.textContent = progressMessage(result.percent);
-  if (els.progressToday) els.progressToday.textContent = `오늘 완료 체크 ${completedToday(progress)}개`;
+  if (els.progressMessage) els.progressMessage.textContent = progressMessage(result);
+  if (els.progressToday) {
+    const today = completedToday(progress);
+    els.progressToday.textContent = result.total
+      ? `단계 기준 ${formatPercent(result.weightedPercent)} · 오늘 +${today}단계`
+      : `오늘 +${today}단계`;
+  }
 }
 
 function renderAll() {
@@ -163,7 +177,7 @@ function toggleCurrentEntry() {
   const nowFile = fileProgress(progress, fileId);
   const modeNow = modeProgress(progress, mode);
   if (nextDone && !wasFileComplete && nowFile.state === "complete") {
-    showToast(`회화 하나 완료. ${modeNow.percent}%까지 왔다.`, "ok");
+    showToast(`회화 하나 끝. ${modeNow.complete}/${modeNow.total} · ${formatPercent(modeNow.percent)}까지 왔다.`, "ok");
   } else {
     showToast(nextDone ? `${entryKey} 검수 완료로 표시했습니다.` : `${entryKey} 완료 표시를 취소했습니다.`, nextDone ? "ok" : "info");
   }
