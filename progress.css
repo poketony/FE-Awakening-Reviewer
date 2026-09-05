@@ -9,6 +9,13 @@
   width: min(360px, 72vw);
   height: auto;
   object-fit: contain;
+  filter:
+    brightness(1.28)
+    contrast(1.06)
+    saturate(1.08)
+    drop-shadow(0 0 1px rgb(255 255 255 / .92))
+    drop-shadow(0 0 5px rgb(255 244 222 / .34))
+    drop-shadow(0 3px 12px rgb(255 255 255 / .12));
 }
 
 .progress-card {
