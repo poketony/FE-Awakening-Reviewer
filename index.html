@@ -4,18 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="referrer" content="no-referrer" />
-  <meta name="theme-color" content="#16151a" />
+  <meta name="theme-color" content="#571212" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com https://raw.githubusercontent.com; img-src 'self' data: blob: https://raw.githubusercontent.com; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'" />
   <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./assets/icon-192.png" />
+  <link rel="apple-touch-icon" href="./assets/icon-192.png" />
   <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./progress.css" />
   <title>FE Awakening Reviewer</title>
 </head>
 <body>
   <header class="topbar">
-    <div>
-      <p class="eyebrow">FE-Awakening · mobile review</p>
-      <h1>지원회화 검수</h1>
-    </div>
+    <img class="brand-logo" src="./assets/reviewer-logo.png" alt="Fire Emblem 검수시벌" />
     <span id="status" class="status">초기화 중…</span>
   </header>
 
@@ -29,6 +29,24 @@
         <input id="token" type="password" autocomplete="off" placeholder="Fine-grained PAT (선택)" aria-label="GitHub token" />
         <button id="connect" class="primary" type="button">쓰기 연결</button>
         <button id="read-only" type="button">읽기 전용</button>
+      </div>
+    </section>
+
+    <section class="progress-card card" aria-label="검수 진행도">
+      <div class="progress-head">
+        <div>
+          <p class="eyebrow">검수 진행도</p>
+          <div class="progress-number-row">
+            <strong id="progress-percent" class="progress-percent">—</strong>
+            <span id="progress-count" class="progress-count">회화 목록 불러오는 중</span>
+          </div>
+        </div>
+        <span id="progress-mode" class="progress-mode">본편</span>
+      </div>
+      <div class="progress-track" aria-hidden="true"><div id="progress-fill" class="progress-fill"></div></div>
+      <div class="progress-foot">
+        <strong id="progress-message">첫 완료 체크 하나부터 찍자.</strong>
+        <span id="progress-today">오늘 완료 체크 0개</span>
       </div>
     </section>
 
@@ -54,8 +72,13 @@
 
       <div id="workspace" hidden>
         <section class="card workspace-head">
-          <p class="eyebrow">현재 파일</p>
-          <code id="source-path"></code>
+          <div class="workspace-file-row">
+            <div>
+              <p class="eyebrow">현재 파일</p>
+              <code id="source-path"></code>
+            </div>
+            <span id="review-file-state" class="review-state-tag" data-state="incomplete">○ 미완료</span>
+          </div>
           <div class="chips workspace-chips">
             <span id="draft-state" class="chip"></span>
             <span id="control-state" class="chip"></span>
@@ -101,6 +124,7 @@
             <button id="revert" class="danger-ghost" type="button">이 파일 초안 버리기</button>
             <button id="save" class="primary" type="button">현재 수정 저장</button>
           </div>
+          <button id="complete-entry" class="complete-entry" type="button">✓ 이 단계 검수 완료</button>
           <details class="raw-details">
             <summary>현재 MID 전체 스크립트 확인</summary>
             <textarea id="editor" class="raw-view" spellcheck="false" autocapitalize="off" autocomplete="off" readonly></textarea>
@@ -120,5 +144,6 @@
 
   <div id="toast" class="toast" role="status"></div>
   <script type="module" src="./app.js"></script>
+  <script type="module" src="./progress.js"></script>
 </body>
 </html>

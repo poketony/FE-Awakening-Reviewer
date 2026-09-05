@@ -1,0 +1,131 @@
+/* Reviewer identity + progress layer. Kept separate from the core layout. */
+.topbar {
+  align-items: center;
+  padding-top: .55rem;
+  padding-bottom: .35rem;
+}
+.brand-logo {
+  display: block;
+  width: min(360px, 72vw);
+  height: auto;
+  object-fit: contain;
+}
+
+.progress-card {
+  padding: .9rem 1rem .85rem;
+  border-color: #5a3c34;
+  background:
+    linear-gradient(135deg, rgb(87 18 18 / .34), transparent 55%),
+    color-mix(in srgb, var(--panel) 96%, transparent);
+}
+.progress-head,
+.progress-number-row,
+.progress-foot,
+.workspace-file-row {
+  display: flex;
+  align-items: center;
+}
+.progress-head,
+.progress-foot,
+.workspace-file-row {
+  justify-content: space-between;
+  gap: .8rem;
+}
+.progress-number-row { gap: .7rem; align-items: baseline; }
+.progress-percent {
+  font-size: clamp(2rem, 8vw, 3.1rem);
+  line-height: 1;
+  letter-spacing: -.04em;
+  color: #fff3d6;
+  font-variant-numeric: tabular-nums;
+}
+.progress-count { color: var(--muted); font-size: .8rem; }
+.progress-mode {
+  flex: 0 0 auto;
+  border: 1px solid #8a642c;
+  border-radius: 999px;
+  padding: .32rem .6rem;
+  color: #ffe5a7;
+  background: rgb(87 18 18 / .55);
+  font-size: .75rem;
+  font-weight: 800;
+}
+.progress-track {
+  height: 12px;
+  margin-top: .72rem;
+  border: 1px solid #4f4442;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #100d0f;
+}
+.progress-fill {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7a1717, #d1a24d);
+  transition: width .28s ease;
+}
+.progress-foot { margin-top: .55rem; font-size: .74rem; }
+.progress-foot strong { color: #e8d7bb; font-weight: 750; }
+.progress-foot span { color: var(--muted); white-space: nowrap; }
+
+.review-state-tag {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: .32rem .56rem;
+  font-size: .7rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+.review-state-tag[data-state="progress"] {
+  color: var(--warn);
+  border-color: #6e5b30;
+  background: #2b2417;
+}
+.review-state-tag[data-state="complete"] {
+  color: var(--ok);
+  border-color: #385f4a;
+  background: #17251d;
+}
+.workspace-file-row > div { min-width: 0; }
+
+.entry-button.reviewed {
+  border-color: #41735a;
+  color: #9fe4b9;
+  background: #18251e;
+}
+.entry-button.reviewed.active {
+  border-color: #d0a34f;
+  color: #fff0bd;
+  background: #3a3024;
+}
+
+.complete-entry {
+  width: 100%;
+  margin-top: .55rem;
+  border-color: #87682f;
+  color: #ffe7a8;
+  background: #332818;
+  font-weight: 850;
+}
+.complete-entry.completed {
+  border-color: #44765b;
+  color: #a7ebc1;
+  background: #17271f;
+}
+
+/* The Japanese renderer stays synchronized, but only the Korean side owns navigation. */
+.japanese-scene > .frame-nav { display: none !important; }
+
+@media (max-width: 680px) {
+  .topbar { align-items: center; }
+  .brand-logo { width: min(290px, 74vw); }
+  .status { max-width: 29%; font-size: .7rem; }
+  .progress-card { padding: .78rem .8rem .75rem; }
+  .progress-head { align-items: flex-start; }
+  .progress-number-row { gap: .5rem; }
+  .progress-count { font-size: .73rem; }
+  .progress-foot { align-items: flex-start; gap: .4rem; flex-direction: column; }
+  .workspace-file-row { align-items: flex-start; }
+}

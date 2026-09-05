@@ -1,11 +1,11 @@
 {
   "name": "fe-awakening-reviewer",
-  "version": "0.2.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
     "serve": "python -m http.server 4173",
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check app.js && node --check lib/github.js && node --check lib/catalog.js && node --check lib/message-format.js && node --check lib/validation.js && node --check lib/game-renderer.js && node --check lib/safe-editor.js"
+    "check": "node --check app.js && node --check progress.js && node --check lib/github.js && node --check lib/catalog.js && node --check lib/message-format.js && node --check lib/validation.js && node --check lib/game-renderer.js && node --check lib/safe-editor.js && node --check lib/review-progress.js"
   }
 }
