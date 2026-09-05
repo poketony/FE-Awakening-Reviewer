@@ -1,4 +1,4 @@
-const CACHE = "fe-awakening-reviewer-v5";
+const CACHE = "fe-awakening-reviewer-v6";
 const SHELL = [
   "./", "./index.html", "./styles.css", "./progress.css", "./app.js", "./progress.js", "./manifest.webmanifest",
   "./assets/reviewer-logo.png", "./assets/icon-192.png", "./assets/icon-512.png",
