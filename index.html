@@ -88,11 +88,9 @@
           </div>
         </section>
 
-        <nav id="entry-buttons" class="entry-buttons card" aria-label="회화 단계 선택"></nav>
-
-        <section class="scene-card card japanese-scene">
-          <div class="scene-head">
-            <div><p class="eyebrow">일본어</p><h2>원문 장면</h2></div>
+        <section class="scene-card card japanese-scene" aria-label="일본어">
+          <div class="scene-head compact-scene-head">
+            <p class="eyebrow scene-language">일본어</p>
             <span id="scene-sync" class="scene-sync"></span>
           </div>
           <div class="canvas-wrap"><canvas id="ja-canvas" width="400" height="240"></canvas></div>
@@ -107,9 +105,10 @@
           </div>
         </section>
 
-        <section class="scene-card card korean-scene">
-          <div class="scene-head">
-            <div><p class="eyebrow">한국어</p><h2>번역 장면</h2></div>
+        <section class="scene-card card korean-scene" aria-label="한국어">
+          <div class="scene-head compact-scene-head korean-scene-head">
+            <p class="eyebrow scene-language">한국어</p>
+            <nav id="entry-buttons" class="entry-buttons scene-entry-buttons" aria-label="회화 단계 선택"></nav>
           </div>
           <div class="canvas-wrap"><canvas id="ko-canvas" width="400" height="240"></canvas></div>
           <div class="scene-script editable-script">
