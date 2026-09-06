@@ -129,3 +129,32 @@ canvas { display: block; width: 100%; height: auto; image-rendering: auto; }
 /* 1~2줄 대사 전환 때 아래 카드가 위아래로 튀지 않도록 장면 스크립트 높이를 고정한다. */
 .readonly-script pre { min-height: 3.5em; }
 .safe-piece textarea { height: 74px; min-height: 74px; }
+
+/* 렌더 헤더를 한 줄로 압축하고 C/B/A/S는 한국어 렌더 바로 위에 둔다. */
+.compact-scene-head { margin-bottom: .45rem; min-height: 38px; }
+.scene-language { margin: 0; white-space: nowrap; align-self: center; }
+.scene-entry-buttons {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0;
+  margin: 0 0 0 auto;
+  gap: .32rem;
+  min-width: 0;
+}
+.scene-entry-buttons .entry-button {
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 38px;
+  padding: .42rem .58rem;
+}
+
+@media (max-width: 680px) {
+  .compact-scene-head { gap: .45rem; margin-bottom: .4rem; }
+  .scene-entry-buttons { padding: 0; gap: .28rem; }
+  .scene-entry-buttons .entry-button {
+    min-width: 42px;
+    min-height: 38px;
+    padding: .4rem .5rem;
+  }
+}
