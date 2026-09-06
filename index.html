@@ -23,7 +23,7 @@
     <section class="auth card">
       <div class="auth-copy">
         <strong>GitHub 연결</strong>
-        <span>읽기와 로컬 검수는 토큰 없이 가능합니다. PR을 만들 때만 토큰이 필요합니다.</span>
+        <span>입력한 Fine-grained PAT는 이 기기에 기억됩니다. GitHub에 반영할 때 자동으로 다시 사용하며, 지우려면 입력칸을 비우면 됩니다.</span>
       </div>
       <div class="auth-row">
         <input id="token" type="password" autocomplete="off" placeholder="Fine-grained PAT (선택)" aria-label="GitHub token" />
@@ -143,6 +143,7 @@
   </main>
 
   <div id="toast" class="toast" role="status"></div>
+  <script type="module" src="./token-persistence.js"></script>
   <script type="module" src="./app.js"></script>
   <script type="module" src="./progress.js"></script>
 </body>
