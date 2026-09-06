@@ -5,7 +5,7 @@ const ASSET_ROOT = "https://raw.githubusercontent.com/poketony/FE-Awakening/main
 const MAX_BLOB_TEXT_CACHE = 160;
 const MAX_SHARED_IMAGE_CACHE = 220;
 const MAX_SHARED_RECOLOR_CACHE = 96;
-const MAX_RENDER_CACHE = 48;
+const MAX_RENDER_CACHE = 24;
 
 const blobTextCache = new Map();
 const blobTextInflight = new Map();
@@ -15,6 +15,8 @@ const sharedText = new Map();
 const sharedRecolored = new Map();
 const renderedFrames = new Map();
 const rendererIds = new WeakMap();
+const activeRenderers = new Set();
+const lastFrameByCanvasId = new Map();
 let nextRendererId = 1;
 let entryHostPath = "";
 
@@ -155,6 +157,46 @@ function renderCacheKey(renderer, value, options) {
   ].join("\u0000");
 }
 
+function paintPixels(canvas, pixels) {
+  if (!(canvas instanceof HTMLCanvasElement) || !(pixels instanceof ImageData)) return false;
+  if (canvas.width !== pixels.width || canvas.height !== pixels.height) return false;
+  const context = canvas.getContext("2d");
+  if (!context) return false;
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.putImageData(pixels, 0, 0);
+  return true;
+}
+
+function snapshotCanvas(canvas) {
+  try {
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    return context?.getImageData(0, 0, canvas.width, canvas.height) || null;
+  } catch {
+    return null;
+  }
+}
+
+function clearVolatileCanvasCaches() {
+  // Android Chrome는 앱을 백그라운드에 두면 메모리 절약을 위해 canvas backing store를
+  // 버릴 수 있다. glyph/recolor 캐시에 HTMLCanvasElement를 그대로 들고 있으면 복귀 후
+  // 빈 캔버스를 '캐시 히트'로 재사용하게 된다. CPU 메모리인 ImageData 프레임 캐시는
+  // 유지하고, 재생성 가능한 소형 canvas 캐시만 비운다.
+  sharedRecolored.clear();
+  for (const renderer of activeRenderers) {
+    renderer.glyphs?.clear?.();
+    renderer.recolored?.clear?.();
+  }
+}
+
+function restoreVisibleCanvases() {
+  clearVolatileCanvasCaches();
+  for (const [canvasId, cached] of lastFrameByCanvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !cached?.pixels) continue;
+    paintPixels(canvas, cached.pixels);
+  }
+}
+
 const rendererProto = AwakeningRenderer.prototype;
 if (!rendererProto.__reviewerPerformanceCachePatched) {
   const originalLoadImage = rendererProto.loadImage;
@@ -210,16 +252,15 @@ if (!rendererProto.__reviewerPerformanceCachePatched) {
 
   rendererProto.render = async function renderAtomically(value, canvas, options = {}) {
     const guarded = canvas instanceof HTMLCanvasElement && ["ja-canvas", "ko-canvas"].includes(canvas.id);
+    activeRenderers.add(this);
     warmPortraits(this, value, options.frameIndex ?? 0, options.playerGender || "male");
     if (!guarded) return originalRender.call(this, value, canvas, options);
 
     const generation = Number(canvas.dataset.renderGeneration || 0);
     const key = renderCacheKey(this, value, options);
     const cached = renderedFrames.get(key);
-    if (cached) {
-      const context = canvas.getContext("2d");
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(cached.canvas, 0, 0);
+    if (cached?.pixels && paintPixels(canvas, cached.pixels)) {
+      lastFrameByCanvasId.set(canvas.id, cached);
       return cached.result;
     }
 
@@ -227,18 +268,31 @@ if (!rendererProto.__reviewerPerformanceCachePatched) {
     buffer.width = canvas.width;
     buffer.height = canvas.height;
     const result = await originalRender.call(this, value, buffer, options);
-    putCapped(renderedFrames, key, { canvas: buffer, result }, MAX_RENDER_CACHE);
+    const pixels = snapshotCanvas(buffer);
+    const frameCache = pixels ? { pixels, result } : null;
+    if (frameCache) putCapped(renderedFrames, key, frameCache, MAX_RENDER_CACHE);
 
     if (Number(canvas.dataset.renderGeneration || 0) === generation) {
-      const context = canvas.getContext("2d");
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(buffer, 0, 0);
+      if (pixels) paintPixels(canvas, pixels);
+      else {
+        const context = canvas.getContext("2d");
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(buffer, 0, 0);
+      }
+      if (frameCache) lastFrameByCanvasId.set(canvas.id, frameCache);
     }
     return result;
   };
 
   rendererProto.__reviewerPerformanceCachePatched = true;
 }
+
+// 다른 앱/사전으로 잠깐 갔다 돌아왔을 때 Android가 canvas 표면을 날려도
+// 마지막 장면은 네트워크/재렌더 없이 CPU 쪽 스냅샷으로 즉시 복구한다.
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) requestAnimationFrame(restoreVisibleCanvases);
+});
+window.addEventListener("pageshow", () => requestAnimationFrame(restoreVisibleCanvases));
 
 const warmRenderer = new AwakeningRenderer();
 for (const path of [
