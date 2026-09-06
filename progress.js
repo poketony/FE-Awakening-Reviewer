@@ -25,6 +25,7 @@ let mappingRevision = 0;
 let renderGuard = false;
 let publishGuard = false;
 const catalogPaths = { main: [], dlc: [] };
+const catalogReady = { main: false, dlc: false };
 
 const $ = (selector) => document.querySelector(selector);
 const els = {
@@ -165,7 +166,10 @@ async function syncRemoteIntoLocal() {
 function snapshotCatalog() {
   if (!els.fileSelect || els.search?.value.trim()) return;
   const ids = [...els.fileSelect.options].map((option) => option.value).filter(Boolean);
-  if (ids.length) catalogPaths[currentMode()] = ids;
+  if (!ids.length) return;
+  const mode = currentMode();
+  catalogPaths[mode] = ids;
+  catalogReady[mode] = true;
 }
 
 function eligibleRows(document, mode, includeVariants) {
@@ -315,16 +319,27 @@ function renderCurrentFileState() {
   }
 }
 
+function renderProgressLoading(mode) {
+  if (els.progressMode) els.progressMode.textContent = mode === "dlc" ? "DLC" : "본편";
+  if (els.progressPercent) els.progressPercent.textContent = "—";
+  if (els.progressCount) els.progressCount.textContent = "회화 목록 불러오는 중";
+  if (els.progressFill) els.progressFill.style.width = "0%";
+  if (els.progressMessage) els.progressMessage.textContent = "검수 진행도 불러오는 중…";
+  if (els.progressToday) els.progressToday.textContent = "단계 기준 계산 중";
+}
+
 function renderProgress() {
   snapshotCatalog();
   const mode = currentMode();
+  if (!catalogReady[mode] || !catalogPaths[mode].length) {
+    renderProgressLoading(mode);
+    return;
+  }
   const result = summarizeMode(progress, mode, catalogPaths[mode]);
   if (els.progressMode) els.progressMode.textContent = mode === "dlc" ? "DLC" : "본편";
-  if (els.progressPercent) els.progressPercent.textContent = result.total ? formatPercent(result.percent) : "—";
+  if (els.progressPercent) els.progressPercent.textContent = formatPercent(result.percent);
   if (els.progressCount) {
-    els.progressCount.textContent = result.total
-      ? `검수 완료 파일 ${result.complete} / ${result.total} · 진행 중 ${result.inProgress}`
-      : "회화 목록 불러오는 중";
+    els.progressCount.textContent = `검수 완료 파일 ${result.complete} / ${result.total} · 진행 중 ${result.inProgress}`;
   }
   if (els.progressFill) els.progressFill.style.width = `${Math.max(0, Math.min(100, result.percent))}%`;
   if (els.progressMessage) els.progressMessage.textContent = progressMessage(result);
@@ -508,5 +523,6 @@ const pendingObserver = new MutationObserver(() => { if (!renderGuard) queueMicr
 if (els.pendingCount) pendingObserver.observe(els.pendingCount, { childList: true, characterData: true, subtree: true });
 if (els.publish) pendingObserver.observe(els.publish, { attributes: true, attributeFilter: ["disabled"] });
 
-renderAll();
+renderProgressLoading(currentMode());
+injectUi();
 void syncRemoteIntoLocal().then(() => mapCurrentEntries());
