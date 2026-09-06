@@ -1,6 +1,7 @@
 (() => {
   const originalFetch = window.fetch.bind(window);
   const originalGetContext = HTMLCanvasElement.prototype.getContext;
+  const NativeMutationObserver = window.MutationObserver;
   const immutableResponses = new Map();
   const immutablePending = new Map();
   const shortResponses = new Map();
@@ -108,8 +109,8 @@
       const canvas = document.getElementById(id);
       if (!canvas) continue;
       canvas.dataset.renderGeneration = String(currentGeneration(canvas) + 1);
-      const context = originalGetContext.call(canvas, "2d");
-      context?.clearRect(0, 0, canvas.width, canvas.height);
+      // 기존 화면은 새 렌더가 완성될 때까지 유지한다. 즉시 clear하면 모바일에서
+      // 매 동작마다 빈 화면이 먼저 보여 체감 지연이 크게 느껴진다.
     }
   }
 
@@ -132,6 +133,17 @@
         return Reflect.set(target, property, value, target);
       },
     });
+  };
+
+  // progress.js는 entry-buttons의 직접 자식 교체만 보면 충분하다. subtree까지 보면
+  // 상태 배지를 꾸미며 바뀐 textContent를 다시 감지해 같은 매핑을 반복하게 된다.
+  window.MutationObserver = class ReviewerMutationObserver extends NativeMutationObserver {
+    observe(target, options = {}) {
+      if (target?.id === "entry-buttons" && options.childList) {
+        return super.observe(target, { ...options, subtree: false });
+      }
+      return super.observe(target, options);
+    }
   };
 
   function startFileTransition() {
@@ -157,7 +169,7 @@
     const toast = document.querySelector("#toast");
     if (!toast || toast.dataset.transitionGuardObserved) return;
     toast.dataset.transitionGuardObserved = "true";
-    const observer = new MutationObserver(() => {
+    const observer = new NativeMutationObserver(() => {
       if (!toast.textContent.includes("__review_switch_aborted__")) return;
       toast.textContent = "";
       toast.classList.remove("show");
