@@ -125,3 +125,7 @@ canvas { display: block; width: 100%; height: auto; image-rendering: auto; }
   .safe-piece textarea { min-height: 60px; font-size: 1rem; }
   .pending-actions, .action-row { grid-template-columns: 1fr 1fr; }
 }
+
+/* 1~2줄 대사 전환 때 아래 카드가 위아래로 튀지 않도록 장면 스크립트 높이를 고정한다. */
+.readonly-script pre { min-height: 3.5em; }
+.safe-piece textarea { height: 74px; min-height: 74px; }
