@@ -1,6 +1,6 @@
-const CACHE = "fe-awakening-reviewer-v16";
+const CACHE = "fe-awakening-reviewer-v17";
 const SHELL = [
-  "./", "./index.html", "./styles.css", "./progress.css", "./transition-guard.js", "./token-persistence.js", "./performance-cache.js", "./app.js", "./progress.js", "./manifest-v2.webmanifest",
+  "./", "./index.html", "./styles.css", "./progress.css", "./transition-guard.js", "./token-persistence.js", "./performance-cache.js", "./app.js", "./progress.js", "./review-ui-optimizer.js", "./manifest-v2.webmanifest",
   "./assets/reviewer-logo.png", "./assets/reviewer-app-v2-192.png", "./assets/reviewer-app-v2-512.png",
   "./lib/github.js", "./lib/catalog.js", "./lib/message-format.js", "./lib/validation.js", "./lib/safe-editor.js",
   "./lib/game-renderer.js", "./lib/hair-colors.js", "./lib/review-progress.js"
