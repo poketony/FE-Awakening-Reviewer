@@ -2,6 +2,7 @@
   const originalFetch = window.fetch.bind(window);
   const originalGetContext = HTMLCanvasElement.prototype.getContext;
   const immutableResponses = new Map();
+  const immutablePending = new Map();
   const shortResponses = new Map();
   const guardedCanvasIds = new Set(["ja-canvas", "ko-canvas"]);
   const passiveMethods = new Set([
@@ -60,11 +61,26 @@
     if (isImmutableGitHubBlob(url)) {
       const cached = immutableResponses.get(url);
       if (cached) return cached.clone();
+
+      const pending = immutablePending.get(url);
+      if (pending) {
+        try { return (await pending).clone(); }
+        catch (error) {
+          if (transitionController.signal.aborted) throw new Error("__review_switch_aborted__");
+          throw error;
+        }
+      }
+
       const signal = mergeSignals(init.signal || input?.signal || null, transitionController.signal);
+      const request = originalFetch(input, { ...init, signal })
+        .then((response) => {
+          if (response.ok) putImmutable(url, response);
+          return response;
+        })
+        .finally(() => immutablePending.delete(url));
+      immutablePending.set(url, request);
       try {
-        const response = await originalFetch(input, { ...init, signal });
-        if (response.ok) putImmutable(url, response);
-        return response;
+        return (await request).clone();
       } catch (error) {
         if (signal?.aborted) throw new Error("__review_switch_aborted__");
         throw error;
