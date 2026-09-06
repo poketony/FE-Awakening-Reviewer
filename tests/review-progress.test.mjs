@@ -1,48 +1,49 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  emptyProgress, parseProgress, rememberCatalog, rememberExpected, setEntryDone,
-  isEntryDone, fileProgress, modeProgress, completedToday, progressMessage,
+  emptyProgress, parseProgress, registerFile, setReviewStatus, getReviewStatus,
+  fileProgress, summarizeMode, mergeProgress, completedToday, serializeProgress,
 } from "../lib/review-progress.js";
 
-test("progress survives malformed storage and remembers the current catalog ids", () => {
-  const progress = parseProgress("not json");
-  rememberCatalog(progress, "main", ["a", "b", "a"]);
-  assert.deepEqual(progress.knownIds.main, ["a", "b"]);
-  rememberCatalog(progress, "main", ["b", "c"]);
-  assert.deepEqual(progress.knownIds.main, ["b", "c"]);
+test("공용 v2 검수 상태와 파일 완료율", () => {
+  const progress = emptyProgress();
+  registerFile(progress, { path: "Awakening/Messages (K)/A.txt", mode: "main", expected: ["C", "B"] });
+  setReviewStatus(progress, { path: "Awakening/Messages (K)/A.txt", entryKey: "C", status: "approved", at: "2026-09-06T01:00:00.000Z" });
+  assert.equal(getReviewStatus(progress, "awakening/messages (k)/A.txt", "C"), "approved");
+  assert.equal(fileProgress(progress, "Awakening/Messages (K)/A.txt").state, "progress");
+  setReviewStatus(progress, { path: "Awakening/Messages (K)/A.txt", entryKey: "B", status: "approved", at: "2026-09-06T01:01:00.000Z" });
+  assert.equal(fileProgress(progress, "Awakening/Messages (K)/A.txt").state, "complete");
+  const summary = summarizeMode(progress, "main", ["Awakening/Messages (K)/A.txt", "Awakening/Messages (K)/B.txt"]);
+  assert.equal(summary.percent, 50);
+  assert.equal(summary.entryPercent, 100);
 });
 
-test("big percent is completed files while weighted percent still rewards partial stages", () => {
+test("수정 필요와 보류는 파일 완료로 치지 않는다", () => {
   const progress = emptyProgress();
-  rememberCatalog(progress, "main", ["a", "b"]);
-  rememberExpected(progress, { mode: "main", fileId: "a", labels: ["C", "B", "A", "S"] });
-  setEntryDone(progress, { mode: "main", fileId: "a", entryKey: "C", done: true, at: "2026-09-05T10:00:00Z" });
-  assert.equal(isEntryDone(progress, "a", "C"), true);
-  assert.equal(fileProgress(progress, "a").state, "progress");
-  assert.equal(modeProgress(progress, "main").percent, 0);
-  assert.equal(modeProgress(progress, "main").weightedPercent, 12.5);
-  for (const key of ["B", "A", "S"]) setEntryDone(progress, { mode: "main", fileId: "a", entryKey: key, done: true });
-  assert.equal(fileProgress(progress, "a").state, "complete");
-  assert.equal(modeProgress(progress, "main").percent, 50);
-  assert.equal(modeProgress(progress, "main").complete, 1);
-  assert.equal(modeProgress(progress, "main").total, 2);
+  registerFile(progress, { path: "Awakening/Messages (K)/A.txt", expected: ["C", "B"] });
+  setReviewStatus(progress, { path: "Awakening/Messages (K)/A.txt", entryKey: "C", status: "needs_fix" });
+  setReviewStatus(progress, { path: "Awakening/Messages (K)/A.txt", entryKey: "B", status: "deferred" });
+  const file = fileProgress(progress, "Awakening/Messages (K)/A.txt");
+  assert.equal(file.state, "progress");
+  assert.equal(file.needsFix, 1);
+  assert.equal(file.deferred, 1);
 });
 
-test("unmarking an entry rolls completion back", () => {
-  const progress = emptyProgress();
-  rememberExpected(progress, { mode: "dlc", fileId: "x", labels: ["1", "2"] });
-  setEntryDone(progress, { mode: "dlc", fileId: "x", entryKey: "1", done: true });
-  setEntryDone(progress, { mode: "dlc", fileId: "x", entryKey: "1", done: false });
-  assert.equal(fileProgress(progress, "x").done, 0);
+test("병합은 MID별 최신 updatedAt을 보존하고 미검수 tombstone도 유지한다", () => {
+  const left = emptyProgress();
+  const right = emptyProgress();
+  setReviewStatus(left, { path: "Awakening/Messages (K)/A.txt", entryKey: "C", status: "approved", at: "2026-09-06T01:00:00.000Z" });
+  setReviewStatus(right, { path: "Awakening/Messages (K)/A.txt", entryKey: "C", status: "unreviewed", at: "2026-09-06T02:00:00.000Z" });
+  const merged = mergeProgress(left, right);
+  assert.equal(getReviewStatus(merged, "Awakening/Messages (K)/A.txt", "C"), "unreviewed");
 });
 
-test("today count and motivation text are deterministic", () => {
+test("오늘 완료 수와 직렬화가 안정적이다", () => {
   const progress = emptyProgress();
-  rememberExpected(progress, { mode: "main", fileId: "a", labels: ["C"] });
-  setEntryDone(progress, { mode: "main", fileId: "a", entryKey: "C", done: true, at: "2026-09-05T03:00:00Z" });
-  assert.equal(completedToday(progress, new Date("2026-09-05T12:00:00Z")), 1);
-  assert.match(progressMessage({ percent: 50, complete: 50, total: 100, remaining: 50 }), /절반/);
-  assert.match(progressMessage({ percent: 100, complete: 100, total: 100, remaining: 0 }), /완료/);
-  assert.match(progressMessage({ percent: 1, complete: 1, total: 100, remaining: 99 }), /0%/);
+  setReviewStatus(progress, { path: "Awakening/Messages (K)/B.txt", entryKey: "B", status: "approved", at: "2026-09-06T02:00:00.000Z" });
+  setReviewStatus(progress, { path: "Awakening/Messages (K)/A.txt", entryKey: "A", status: "approved", at: "2026-09-05T02:00:00.000Z" });
+  assert.equal(completedToday(progress, new Date("2026-09-06T12:00:00.000Z")), 1);
+  const text = serializeProgress(progress);
+  assert.deepEqual(parseProgress(text), parseProgress(progress));
+  assert.ok(text.indexOf("a.txt") < text.indexOf("b.txt"));
 });
