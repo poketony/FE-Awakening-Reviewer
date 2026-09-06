@@ -42,7 +42,9 @@
 
 Pull requests, Actions, Administration, Workflows, Pages, Secrets 권한은 필요하지 않습니다.
 
-토큰은 소스 코드나 Web Storage에 저장하지 않고 현재 페이지의 JS 메모리에서만 사용합니다. 페이지를 완전히 다시 열면 다시 입력해야 합니다.
+입력한 PAT는 편의를 위해 이 기기의 브라우저 `localStorage`에 저장합니다. 다음에 앱을 열면 자동으로 입력칸에 복원되므로 매번 다시 붙여넣을 필요가 없습니다. 저장된 토큰을 지우려면 PAT 입력칸의 내용을 모두 삭제하면 됩니다.
+
+이 방식은 개인 휴대폰처럼 신뢰하는 기기를 전제로 합니다. 브라우저 사이트 데이터에 접근할 수 있는 사람이나 동일 출처에서 실행되는 악성 스크립트가 있다면 저장된 토큰도 읽을 수 있으므로, 토큰은 계속 **FE-Awakening 하나에만 제한된 Fine-grained PAT**를 사용하세요.
 
 ## 휴대폰 검수 순서
 
@@ -54,7 +56,7 @@ Pull requests, Actions, Administration, Workflows, Pages, Secrets 권한은 필�
 6. 구조 검증이 정상인지 확인하고 `현재 수정 저장`으로 로컬 초안에 저장합니다.
 7. 상태를 `확인 완료`, `수정 필요`, `보류`, `미검수` 중 하나로 지정합니다.
 8. 검수한 파일들을 계속 누적합니다.
-9. 작업 묶음이 끝나면 PAT를 입력하고 **`GitHub에 반영`**을 누릅니다.
+9. 작업 묶음이 끝나면 **`GitHub에 반영`**을 누릅니다. 저장된 PAT가 있으면 자동으로 사용합니다.
 10. 도구가 최신 `main`, 번역 파일 SHA, 공용 검수 기록을 다시 읽어 충돌을 검사합니다.
 11. 문제가 없으면 번역 수정 + `Awakening/review-progress.json`을 한 커밋으로 `main`에 직접 반영합니다.
 
@@ -80,7 +82,7 @@ Pull requests, Actions, Administration, Workflows, Pages, Secrets 권한은 필�
 - 공용 진행 기록은 최신 원격본과 MID별 `updatedAt` 기준으로 병합
 - 최종 ref 갱신은 `force: false`
 - 커밋 생성 후 그 사이 `main`이 움직이면 fast-forward가 아니므로 GitHub가 갱신을 거부
-- PAT는 브라우저 영구 저장소에 보관하지 않음
+- PAT는 저장소나 소스 코드에 넣지 않고, 개인 기기의 브라우저 저장소에만 보관
 
 ## 로컬 데이터
 
@@ -88,10 +90,11 @@ Pull requests, Actions, Administration, Workflows, Pages, Secrets 권한은 필�
 
 - 번역 초안: `fe-awakening-reviewer:drafts:v1`
 - 공용 검수 기록 캐시: `fe-awakening-reviewer:review-progress:v2`
+- GitHub PAT: `fe-awakening-reviewer:github-token:v1`
 
 기존 v1 완료 체크는 파일을 열 때 실제 MID에 맞춰 가능한 범위에서 v2 `확인 완료` 상태로 마이그레이션합니다.
 
-**Chrome 사이트 데이터 삭제는 초안과 로컬 검수 기록을 지울 수 있으므로 캐시 문제 해결용으로 사용하지 않는 것을 권장합니다.**
+**Chrome 사이트 데이터 삭제는 초안, 로컬 검수 기록, 저장된 PAT까지 지울 수 있으므로 캐시 문제 해결용으로 사용하지 않는 것을 권장합니다.**
 
 ## 특수 스크립트 수정
 
