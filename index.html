@@ -6,6 +6,8 @@
   <meta name="referrer" content="no-referrer" />
   <meta name="theme-color" content="#571212" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.github.com https://raw.githubusercontent.com; img-src 'self' data: blob: https://raw.githubusercontent.com; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'" />
+  <link rel="preconnect" href="https://api.github.com" crossorigin />
+  <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin />
   <link rel="manifest" href="./manifest-v2.webmanifest" />
   <link rel="icon" type="image/png" sizes="192x192" href="./assets/reviewer-app-v2-192.png" />
   <link rel="apple-touch-icon" href="./assets/reviewer-app-v2-192.png" />
@@ -145,6 +147,7 @@
   <div id="toast" class="toast" role="status"></div>
   <script src="./transition-guard.js"></script>
   <script type="module" src="./token-persistence.js"></script>
+  <script type="module" src="./performance-cache.js"></script>
   <script type="module" src="./app.js"></script>
   <script type="module" src="./progress.js"></script>
 </body>
