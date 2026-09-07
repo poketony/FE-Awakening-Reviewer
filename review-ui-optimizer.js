@@ -1,8 +1,15 @@
+import { GitHubClient } from "./lib/github.js";
+import { parseProgress, mergeProgress, serializeProgress } from "./lib/review-progress.js";
+
 const STORAGE_KEY = "fe-awakening-reviewer:review-progress:v2";
+const REMOTE_PROGRESS_PATH = "Awakening/review-progress.json";
+const refreshClient = new GitHubClient({ owner: "poketony", repo: "FE-Awakening" });
 const naturalRank = new Map();
 let nextRank = 0;
 let sorting = false;
 let sortQueued = false;
+let refreshBusy = false;
+let lastRemoteCheck = 0;
 
 const fileSelect = document.querySelector("#file-select");
 const entryButtons = document.querySelector("#entry-buttons");
@@ -147,6 +154,46 @@ function queueSort() {
   requestAnimationFrame(sortReviewedToBottom);
 }
 
+function showRemoteToast(message) {
+  const toast = document.querySelector("#toast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.dataset.type = "ok";
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2600);
+}
+
+async function refreshRemoteProgress() {
+  const now = Date.now();
+  if (refreshBusy || now - lastRemoteCheck < 3000) return;
+  refreshBusy = true;
+  lastRemoteCheck = now;
+  try {
+    const tree = await refreshClient.getTree("main");
+    const descriptor = tree.find((entry) => entry.path === REMOTE_PROGRESS_PATH);
+    if (!descriptor) return;
+    const remote = parseProgress(await refreshClient.getBlobText(descriptor.sha));
+    const local = parseProgress(localStorage.getItem(STORAGE_KEY));
+    const merged = mergeProgress(remote, local);
+    const before = serializeProgress(local);
+    const after = serializeProgress(merged);
+    if (before === after) return;
+    localStorage.setItem(STORAGE_KEY, after);
+
+    const save = document.querySelector("#save");
+    const hasUnsavedEditor = Boolean(save && !save.disabled);
+    if (hasUnsavedEditor) {
+      showRemoteToast("PC 검수 기록을 받았습니다. 현재 수정 저장 후 새로고침하면 반영됩니다.");
+      return;
+    }
+    location.reload();
+  } catch {
+    // 네트워크가 없거나 GitHub가 일시적으로 실패해도 모바일 검수는 로컬에서 계속한다.
+  } finally {
+    refreshBusy = false;
+  }
+}
+
 document.addEventListener("reviewer:active-entry-changed", syncActiveReviewControls);
 
 if (fileSelect) {
@@ -159,6 +206,11 @@ if (fileSelect) {
     queueSort();
   });
 }
+
+window.addEventListener("focus", () => { void refreshRemoteProgress(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") void refreshRemoteProgress();
+});
 
 queueMicrotask(() => {
   ensureNextFileButton();
