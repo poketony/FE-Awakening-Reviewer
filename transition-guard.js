@@ -14,6 +14,18 @@
   const SHORT_CACHE_MS = 1500;
   let transitionController = new AbortController();
 
+  // 파일 전환용 AbortController의 영향을 받지 않아야 하는 GitHub 커밋/푸시가
+  // 원래 fetch를 직접 사용할 수 있게 보관한다. 외부 네트워크 용도가 아니라
+  // 이 페이지의 GitHubClient가 쓰는 내부 탈출구다.
+  if (typeof window.__reviewerNativeFetch !== "function") {
+    Object.defineProperty(window, "__reviewerNativeFetch", {
+      value: originalFetch,
+      configurable: false,
+      enumerable: false,
+      writable: false,
+    });
+  }
+
   function inputUrl(input) {
     if (typeof input === "string") return input;
     if (input instanceof URL) return input.href;
